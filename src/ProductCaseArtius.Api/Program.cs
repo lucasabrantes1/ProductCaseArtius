@@ -14,6 +14,16 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
+
 // Configuração do Swagger com autenticação JWT
 builder.Services.AddSwaggerGen(config =>
 {
@@ -51,9 +61,22 @@ builder.Services.AddSwaggerGen(config =>
     });
 });
 
-// Configuração EF InMemory conforme requisitos da prova
+
+//builder.Services.AddDbContext<ProductCaseArtiusDbContext>(options =>
+//    options.UseInMemoryDatabase("ProductsInMemoryDb"));
+
 builder.Services.AddDbContext<ProductCaseArtiusDbContext>(options =>
-    options.UseInMemoryDatabase("ProductsInMemoryDb"));
+{
+    var connectionString = builder.Configuration.GetConnectionString("Connection");
+    options.UseMySql(
+        connectionString,
+        ServerVersion.AutoDetect(connectionString),
+        b => b.MigrationsAssembly("ProductCaseArtius.Infrastructure")
+    );
+});
+
+
+
 
 // Configuração de autenticação JWT
 var jwtSigningKey = builder.Configuration.GetSection("Settings:Jwt:SigningKey").Value;
@@ -84,6 +107,10 @@ builder.Services.AddMvc(options => options.Filters.Add(typeof(ExceptionFilter)))
 
 var app = builder.Build();
 
+
+
+
+
 // Pipeline de desenvolvimento
 if (app.Environment.IsDevelopment())
 {
@@ -97,6 +124,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+app.UseCors("AllowAll"); // <-- Aqui no pipeline
 
 // Middleware de autenticação e autorização
 app.UseAuthentication();

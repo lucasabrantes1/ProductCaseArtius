@@ -12,8 +12,9 @@ public class ProductCaseArtiusDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.UseCollation("utf8mb4_general_ci"); 
         base.OnModelCreating(modelBuilder);
-        
+
         // Configuração da entidade User
         modelBuilder.Entity<User>(entity =>
         {
